@@ -1,9 +1,8 @@
 " TODO: implement as buffer autocommand (see stuff at bottom after finish)
-" TODO: doesn't seem to find connection file in parent dir???
 function! s:FindConnection(dir)
 	
 	let l:connection = a:dir . '/' . s:configFile
-
+	
 	" if current directory contains a config file, load it and upload
 	if (filereadable(l:connection))
 		exec 'source ' . l:connection
@@ -14,7 +13,7 @@ function! s:FindConnection(dir)
 	let l:nextDir = strpart(a:dir, 0,  match(a:dir, '/[^/]\+$'))
 
 	" if home directory, then quit search and throw error
-	if (!strlen(l:nextDir) || (stridx(l:nextDir, $HOME) == 0 && strlen(l:nextDir) == strlen($HOME))) 
+	if ! strlen(l:nextDir) || (stridx(l:nextDir, $HOME) == 0 && strlen(l:nextDir) == strlen($HOME))
 		echoerr 'No connection found. Create a ' . s:configFile . ' in your project''s root directory'
 		return 0
 	endif
@@ -25,36 +24,30 @@ function! s:FindConnection(dir)
 endfunction
 
 function! b:Upload()
-	" compose base remote filepath
-	let l:fileBasePath = b:pushremote['mode'] . '://' . b:pushremote['user'] . '@' . b:pushremote['hostname'] . '/' . b:pushremote['remoteroot']
-	
-	" find the file path relative to local root
-	let l:fileRelativePath = substitute(expand('%:p'), b:pushremote['localroot'], '', '')
 
-	" TODO: if relative path has a subfolder, need to make sure those exist remotely
-	" or else upload will fail
-	
+	let l:remoteBasePath = b:pushremote['mode'] . '://' . b:pushremote['user'] . '@' . b:pushremote['hostname'] . '/' . b:pushremote['remoteroot']
+	let l:localRelativeFolder = substitute(expand('%:p:h'), b:pushremote['localroot'], '', '') | " find the folder relative to local root
+
 	" prepare upload by setting user/pass if standard ftp
 	if b:pushremote['mode'] == 'ftp' && has_key(b:pushremote, 'password')
 		call NetUserPass(b:pushremote['user'], b:pushremote['password'])
 	endif
 
+	if b:pushremote['mode'] == 'scp'
+		" create necessary directory (and all required parent directories)
+		execute "!ssh " .
+		\		b:pushremote['user'] . '@' . b:pushremote['hostname'] . 
+		\		" mkdir -p " . b:pushremote['remoteroot'] . l:localRelativeFolder 
+	endif
+
 	" combine paths
-	let l:filePath = l:fileBasePath . l:fileRelativePath
-	echo 'About to upload: ' . l:filePath
+	let l:remoteFilePath = l:remoteBasePath . l:localRelativeFolder . '/' . expand('%:t')
 
-
-	" store previous error setting, then turn errors off
-	" TODO: try/catch block?
-	let l:netrw_errorlvl = g:netrw_errorlvl
-	let g:netrw_errorlvl = 9999
-	
-	exec 'write ' . l:filePath 
-	
-	"" restore
-	let g:netrw_errorlvl = l:netrw_errorlvl
+	" execute save
+	exec 'write ' . l:remoteFilePath 
 
 endfunction
+
 
 " load connection
 let s:configFile = '.pushremote-connection'
@@ -62,7 +55,7 @@ let s:here = substitute(expand('%:p:h'), '/\+$', '', '')
 call s:FindConnection(s:here)
 
 " bind Upload
-command! Upload 'call b:Upload()'
+command! Up call b:Upload()
 
 
 finish
