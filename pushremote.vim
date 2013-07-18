@@ -15,14 +15,12 @@ function! s:Upload()
 		call s:FindConnection(l:here)
 	endif
 
-echo b:pushremote	
 	" defaults
 	if (! has_key(b:pushremote, 'port'))
 		let b:pushremote['port'] = '22'
 	endif
 
-	let l:serverString = b:pushremote['mode'] . '://' . b:pushremote['user'] . '@' . b:pushremote['hostname'] . ':' . b:pushremote['port']
-	let l:remoteBasePath = l:serverString . '/' . b:pushremote['remoteroot']
+	let l:remoteBasePath = '/' . b:pushremote['remoteroot']
 	let l:localRelativeFolder = substitute(expand('%:p:h'), b:pushremote['localroot'], '', '') | " find the folder relative to local root
 
 	" prepare upload by setting user/pass if standard ftp
@@ -32,7 +30,7 @@ echo b:pushremote
 
 	if b:pushremote['mode'] == 'scp'
 		" create necessary directory (and all required parent directories)
-		execute "!ssh " . l:serverString 
+		execute "!ssh " . b:pushremote['user'] . '@' . b:pushremote['hostname'] . ' -p ' . b:pushremote['port']
 		\				" mkdir -p " . b:pushremote['remoteroot'] . l:localRelativeFolder 
 	endif
 
@@ -40,12 +38,12 @@ echo b:pushremote
 	let l:remoteFilePath = l:remoteBasePath . l:localRelativeFolder . '/' . expand('%:t')
 
 	" execute save
-	exec 'write ' . l:remoteFilePath 
+	exec 'write ' . b:pushremote['mode'] . '://' . b:pushremote['user'] . '@' . b:pushremote['hostname'] . ':' . b:pushremote['port'] . l:remoteFilePath 
 
 endfunction
 
-
-" TODO: implement as buffer autocommand (see stuff at bottom after finish)
+" Recursively search up folder tree from current file to find project's
+" connection file
 function! s:FindConnection(dir)
 	
 	let l:configFile = '.pushremote-connection'
