@@ -3,41 +3,26 @@
 "endif
 "let g:pushremote_loaded = 1
 
-"function pushremote#Install(...)
 	
-	execute 'augroup pushremote'
-		au!
-		au BufNewFile * : call s:PrepareBuffer()
-		"au BufReadPre * : call s:PrepareBuffer()
-		au BufWinEnter * : call s:PrepareBuffer()
-	augroup END
-
-"endfunction
-
-function! s:PrepareBuffer()
-
-	if (exists('b:pushremote_prepared'))
-		return
-	endif
-
-	let b:pushremote_prepared = 1
-
-	" bind Upload
-	command! Up call s:Upload()
-
-endfunction
-
+" bind Upload
+command! Up call s:Upload()
 
 function! s:Upload()
-	
 	let l:here = substitute(expand('%:p:h'), '/\+$', '', '')
 
 	" load connection before proceeding
-	if (! exists('b:pushremote_connection'))
+	if (! exists('b:pushremote'))
 		call s:FindConnection(l:here)
 	endif
 
-	let l:remoteBasePath = b:pushremote['mode'] . '://' . b:pushremote['user'] . '@' . b:pushremote['hostname'] . '/' . b:pushremote['remoteroot']
+echo b:pushremote	
+	" defaults
+	if (! has_key(b:pushremote, 'port'))
+		let b:pushremote['port'] = '22'
+	endif
+
+	let l:serverString = b:pushremote['mode'] . '://' . b:pushremote['user'] . '@' . b:pushremote['hostname'] . ':' . b:pushremote['port']
+	let l:remoteBasePath = l:serverString . '/' . b:pushremote['remoteroot']
 	let l:localRelativeFolder = substitute(expand('%:p:h'), b:pushremote['localroot'], '', '') | " find the folder relative to local root
 
 	" prepare upload by setting user/pass if standard ftp
@@ -47,9 +32,8 @@ function! s:Upload()
 
 	if b:pushremote['mode'] == 'scp'
 		" create necessary directory (and all required parent directories)
-		execute "!ssh " .
-		\		b:pushremote['user'] . '@' . b:pushremote['hostname'] . 
-		\		" mkdir -p " . b:pushremote['remoteroot'] . l:localRelativeFolder 
+		execute "!ssh " . l:serverString 
+		\				" mkdir -p " . b:pushremote['remoteroot'] . l:localRelativeFolder 
 	endif
 
 	" combine paths
@@ -69,7 +53,6 @@ function! s:FindConnection(dir)
 	
 	" if current directory contains a config file, load it and upload
 	if (filereadable(l:connection))
-		let b:pushremote_connection = l:connection
 		exec 'source' . l:connection
 		return 1
 	endif
