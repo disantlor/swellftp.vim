@@ -1,29 +1,41 @@
-" TODO: implement as buffer autocommand (see stuff at bottom after finish)
-function! s:FindConnection(dir)
+"if (exists('g:pushremote_loaded'))
+"	finish
+"endif
+"let g:pushremote_loaded = 1
+
+"function pushremote#Install(...)
 	
-	let l:connection = a:dir . '/' . s:configFile
-	
-	" if current directory contains a config file, load it and upload
-	if (filereadable(l:connection))
-		exec 'source ' . l:connection
-		return 1
+	execute 'augroup pushremote'
+		au!
+		au BufNewFile * : call s:PrepareBuffer()
+		"au BufReadPre * : call s:PrepareBuffer()
+		au BufWinEnter * : call s:PrepareBuffer()
+	augroup END
+
+"endfunction
+
+function! s:PrepareBuffer()
+
+	if (exists('b:pushremote_prepared'))
+		return
 	endif
 
-	" no config file found yet, move up one folder
-	let l:nextDir = strpart(a:dir, 0,  match(a:dir, '/[^/]\+$'))
+	let b:pushremote_prepared = 1
 
-	" if home directory, then quit search and throw error
-	if ! strlen(l:nextDir) || (stridx(l:nextDir, $HOME) == 0 && strlen(l:nextDir) == strlen($HOME))
-		echoerr 'No connection found. Create a ' . s:configFile . ' in your project''s root directory'
-		return 0
-	endif
-
-	" search again
-	call s:FindConnection(l:nextDir)
+	" bind Upload
+	command! Up call s:Upload()
 
 endfunction
 
-function! b:Upload()
+
+function! s:Upload()
+	
+	let l:here = substitute(expand('%:p:h'), '/\+$', '', '')
+
+	" load connection before proceeding
+	if (! exists('b:pushremote_connection'))
+		call s:FindConnection(l:here)
+	endif
 
 	let l:remoteBasePath = b:pushremote['mode'] . '://' . b:pushremote['user'] . '@' . b:pushremote['hostname'] . '/' . b:pushremote['remoteroot']
 	let l:localRelativeFolder = substitute(expand('%:p:h'), b:pushremote['localroot'], '', '') | " find the folder relative to local root
@@ -49,45 +61,29 @@ function! b:Upload()
 endfunction
 
 
-" load connection
-let s:configFile = '.pushremote-connection'
-let s:here = substitute(expand('%:p:h'), '/\+$', '', '')
-call s:FindConnection(s:here)
-
-" bind Upload
-command! Up call b:Upload()
-
-
-finish
-
-if (exists('g:pushremote_loaded'))
-	finish
-endif
-let g:pushremote_loaded = 1
-
-function pushremote#Install(...)
+" TODO: implement as buffer autocommand (see stuff at bottom after finish)
+function! s:FindConnection(dir)
 	
-	execute 'augroup ' . l:augroup
-		au!
-		execute 'au BufNewFile * : call s:PrepareBuffer(''BufNewFile'')'
-		execute 'au BufReadPre * : call s:PrepareBuffer(''BufReadPre'')'
-		execute 'au BufWinEnter * : call s:PrepareBuffer(''BufWinEnter'')'
-	augroup END
-
-endfunction
-
-function s:PrepareBuffer(event, fname, dname, rootpath)
-
-	if (exists('b:pushremote_prepared'))
-		return
+	let l:configFile = '.pushremote-connection'
+	let l:connection = a:dir . '/' . l:configFile
+	
+	" if current directory contains a config file, load it and upload
+	if (filereadable(l:connection))
+		let b:pushremote_connection = l:connection
+		exec 'source' . l:connection
+		return 1
 	endif
 
-	let b:pushremote_prepared = 1
-	let b:configFile = '.pushremote-connection'
+	" no config file found yet, move up one folder
+	let l:nextDir = strpart(a:dir, 0,  match(a:dir, '/[^/]\+$'))
 
-	let l:here = substitute(expand('%:p:h'), '/\+$', '', '')
+	" if home directory, then quit search and throw error
+	if ! strlen(l:nextDir) || (stridx(l:nextDir, $HOME) == 0 && strlen(l:nextDir) == strlen($HOME))
+		echoerr 'No connection found. Create a ' . l:configFile . ' in your project''s root directory'
+		return 0
+	endif
 
-	call s:FindConnection(l:here)
-	execute 'doautocmd ' . a:event . ' <buffer>'
+	" search again
+	call s:FindConnection(l:nextDir)
 
 endfunction
