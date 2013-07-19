@@ -15,6 +15,7 @@ specifies the server connection settings in the following format:
     \     'localroot': '',
     \     'remoteroot': '' 
     \}
+__Note: ^---don't commit this file!__
 
 The plugin exposes the command :Up which, when run, compares the location of the current file against
 the 'localroot' to determine where to save it on the server. It uses the built in Vim plugin netrw to
