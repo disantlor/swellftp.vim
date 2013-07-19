@@ -28,7 +28,7 @@ function! s:Upload()
 		call NetUserPass(b:pushremote['user'], b:pushremote['password'])
 	endif
 
-	if b:pushremote['mode'] == 'scp'
+	if b:pushremote['mode'] == 'sftp'
 		" create necessary directory (and all required parent directories)
 		execute "!ssh " . b:pushremote['user'] . '@' . b:pushremote['hostname'] . ' -p ' . b:pushremote['port']
 		\				" mkdir -p " . b:pushremote['remoteroot'] . l:localRelativeFolder 
