@@ -6,12 +6,12 @@ function! s:Upload()
 
 	" load connection before proceeding
 	if (! exists('b:swellftp'))
-		let l:hasConnection = s:FindConnection(l:here)
+		call s:FindConnection(l:here)
 	endif
 
 	" no point in going on if no connection
-	if (l:hasConnection == 0)
-		finish
+	if (! exists('b:swellftp'))
+		return 0
 	endif
 
 	" set some defaults
@@ -25,9 +25,7 @@ function! s:Upload()
 	" prepare upload by setting user/pass if standard ftp
 	if b:swellftp['mode'] == 'ftp' && has_key(b:swellftp, 'password')
 		call NetUserPass(b:swellftp['user'], b:swellftp['password'])
-	endif
-
-	if b:swellftp['mode'] == 'sftp'
+	elseif b:swellftp['mode'] == 'sftp'
 		" create necessary directory (and all required parent directories)
 		execute "!ssh " . b:swellftp['user'] . '@' . b:swellftp['hostname'] . ' -p ' . b:swellftp['port']
 		\				" mkdir -p " . b:swellftp['remoteroot'] . l:localRelativeFolder 
