@@ -1,9 +1,3 @@
-"if (exists('g:swellftp_loaded'))
-"	finish
-"endif
-"let g:swellftp_loaded = 1
-
-	
 " bind Upload
 command! Up call s:Upload()
 
@@ -12,10 +6,15 @@ function! s:Upload()
 
 	" load connection before proceeding
 	if (! exists('b:swellftp'))
-		call s:FindConnection(l:here)
+		let l:hasConnection = s:FindConnection(l:here)
 	endif
 
-	" defaults
+	" no point in going on if no connection
+	if (l:hasConnection == 0)
+		finish
+	endif
+
+	" set some defaults
 	if (! has_key(b:swellftp, 'port'))
 		let b:swellftp['port'] = '22'
 	endif
@@ -53,7 +52,7 @@ function! s:FindConnection(dir)
 	if (filereadable(l:connection))
 		exec 'source' . l:connection
 
-		if (! exists(b:swellftp))
+		if (! exists('b:swellftp'))
 			echoerr "Invalid connection file"
 			return 0
 		endif
