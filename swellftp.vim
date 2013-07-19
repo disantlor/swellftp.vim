@@ -1,7 +1,7 @@
-"if (exists('g:pushremote_loaded'))
+"if (exists('g:swellftp_loaded'))
 "	finish
 "endif
-"let g:pushremote_loaded = 1
+"let g:swellftp_loaded = 1
 
 	
 " bind Upload
@@ -11,34 +11,34 @@ function! s:Upload()
 	let l:here = substitute(expand('%:p:h'), '/\+$', '', '')
 
 	" load connection before proceeding
-	if (! exists('b:pushremote'))
+	if (! exists('b:swellftp'))
 		call s:FindConnection(l:here)
 	endif
 
 	" defaults
-	if (! has_key(b:pushremote, 'port'))
-		let b:pushremote['port'] = '22'
+	if (! has_key(b:swellftp, 'port'))
+		let b:swellftp['port'] = '22'
 	endif
 
-	let l:remoteBasePath = '/' . b:pushremote['remoteroot']
-	let l:localRelativeFolder = substitute(expand('%:p:h'), b:pushremote['localroot'], '', '') | " find the folder relative to local root
+	let l:remoteBasePath = '/' . b:swellftp['remoteroot']
+	let l:localRelativeFolder = substitute(expand('%:p:h'), b:swellftp['localroot'], '', '') | " find the folder relative to local root
 
 	" prepare upload by setting user/pass if standard ftp
-	if b:pushremote['mode'] == 'ftp' && has_key(b:pushremote, 'password')
-		call NetUserPass(b:pushremote['user'], b:pushremote['password'])
+	if b:swellftp['mode'] == 'ftp' && has_key(b:swellftp, 'password')
+		call NetUserPass(b:swellftp['user'], b:swellftp['password'])
 	endif
 
-	if b:pushremote['mode'] == 'sftp'
+	if b:swellftp['mode'] == 'sftp'
 		" create necessary directory (and all required parent directories)
-		execute "!ssh " . b:pushremote['user'] . '@' . b:pushremote['hostname'] . ' -p ' . b:pushremote['port']
-		\				" mkdir -p " . b:pushremote['remoteroot'] . l:localRelativeFolder 
+		execute "!ssh " . b:swellftp['user'] . '@' . b:swellftp['hostname'] . ' -p ' . b:swellftp['port']
+		\				" mkdir -p " . b:swellftp['remoteroot'] . l:localRelativeFolder 
 	endif
 
 	" combine paths
 	let l:remoteFilePath = l:remoteBasePath . l:localRelativeFolder . '/' . expand('%:t')
 
 	" execute save
-	exec 'write ' . b:pushremote['mode'] . '://' . b:pushremote['user'] . '@' . b:pushremote['hostname'] . ':' . b:pushremote['port'] . l:remoteFilePath 
+	exec 'write ' . b:swellftp['mode'] . '://' . b:swellftp['user'] . '@' . b:swellftp['hostname'] . ':' . b:swellftp['port'] . l:remoteFilePath 
 
 endfunction
 
@@ -46,12 +46,18 @@ endfunction
 " connection file
 function! s:FindConnection(dir)
 	
-	let l:configFile = '.pushremote-connection'
+	let l:configFile = '.swellftp-connection'
 	let l:connection = a:dir . '/' . l:configFile
 	
 	" if current directory contains a config file, load it and upload
 	if (filereadable(l:connection))
 		exec 'source' . l:connection
+
+		if (! exists(b:swellftp))
+			echoerr "Invalid connection file"
+			return 0
+		endif
+
 		return 1
 	endif
 
