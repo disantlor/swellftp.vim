@@ -1,13 +1,13 @@
-pushremote.vim
+swellftp.vim
 ==============
 
 This plugin makes it easier to save a file to a remote server (ftp/sftp).
 
 It takes a similar approach to the dirsettings plugin and searches upwards through the directory tree
-for a "connection file" named ".pushremote-connection". The connection file is read as a vimscript and 
+for a "connection file" named ".swellftp-connection". The connection file is read as a vimscript and 
 specifies the server connection settings in the following format:
 
-    b:pushremote = {
+    b:swellftp = {
     \     'mode': '', " ftp or sftp only
     \     'user': '',
     \     'hostname': '',
