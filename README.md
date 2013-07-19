@@ -7,14 +7,14 @@ It takes a similar approach to the dirsettings plugin and searches upwards throu
 for a "connection file" named ".pushremote-connection". The connection file is read as a vimscript and 
 specifies the server connection settings in the following format:
 
-b:pushremote = {
-\     'mode': '' " ftp or sftp
-\			'user': '',
-\			'hostname': '',
-\			'port': '',
-\ 		'localroot': '',
-\			'remoteroot': '' 
-\}
+    b:pushremote = {
+    \     'mode': '', " ftp or sftp only
+    \     'user': '',
+    \     'hostname': '',
+    \     'port': '',
+    \     'localroot': '',
+    \     'remoteroot': '' 
+    \}
 
 The plugin exposes the command :Up which, when run, compares the location of the current file against
 the 'localroot' to determine where to save it on the server. It uses the built in Vim plugin netrw to
